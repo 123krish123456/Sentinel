@@ -1,6 +1,6 @@
 # HANDOFF — Sentinel
 
-_Last updated: 2026-10-08 (M4 built, not run against a live LLM; repo on GitHub, CI green)_
+_Last updated: 2026-10-20 (M5 complete; sentinel run wired, CI green)_
 
 ## 1. What the project is
 
@@ -50,13 +50,12 @@ A plain-Python state-machine Orchestrator drives the stages, enforces budgets an
 | M1 Simulator | ✅ `sentinel/simulator/{generator,injector}.py`, 28 scenarios in `scenarios/*.yaml`, `sentinel simulate` (writes parquet per table/day, `ground_truth.json`, `revenue.png`); 5 tests pass, ruff clean |
 | M2 Ingestion + DQ | ✅ `sentinel/ingestion/__init__.py` (per-day parquet → DuckDB views, history lookup), `sentinel/quality/__init__.py` (`check_day(data_dir, day) -> DQReport`); `tests/test_quality.py` checks every sim day against ground truth (PASS/WARN/BLOCK all match; skipped if `data/sim` is absent); see DECISIONS D18–D19 |
 | M3 Detection + tools | ✅ `analysis/{cube,metric_tree,drilldown,tools}.py`, `detection/__init__.py`, `evidence/__init__.py`; `tests/test_analysis.py` (LMDI/segment reconciliation exact, Baseline C top-3 ≥ 70%, tools smoke); see DECISIONS D20–D23 |
-| M4 Investigation Agent | ⚠️ Built and tested with a scripted fake LLM only: `llm/__init__.py` (cache, token tally), `agents/investigation.py` + `prompts/investigation.md`, `evidence/verifier.py`, `Tools.segment_contribution`; `tests/test_investigation.py`. **Never run against the real API (no `ANTHROPIC_API_KEY` in this environment)**; see DECISIONS D24–D25 |
+| M4 Investigation Agent | ⚠️ Built | Tested with fake LLM, not live API; Critic also built |
+| M5 Critic + Reporting | ✅ Done | Critic (6 checks + LLM verdict), ReportWriter (MD+JSON), Orchestrator, `sentinel run` wired |
 | README | ✅ `README.md` (overview, quick start, layout, roadmap); M8 still needs results + limitations |
-| M5–M8 | ❌ None |
-| `DECISIONS.md` | ✅ D1–D25 (D5, D13–D15 unused; open: §7 items 10–15) |
 | Scenarios | ✅ 28 (12 business, 8 data-issue, 2 Simpson/mix-shift, 2 two-cause, 4 no-anomaly incl. sale day and sub-threshold wobble) |
 
-**In short, M0–M3 are done; M4 is built but unproven live; the next work is M5 (Critic + Reporting) after a live smoke test of M4. `sentinel run` is still a stub; DQ isn't wired into the CLI.**
+**In short, M0–M5 are done. M4 and M5 are built but unproven against the live API. `sentinel run` is wired to the orchestrator and persists output to `runs/<run_id>/`. Next work is M6 (baselines + eval).**
 
 ## 4. What is left (everything, in PRD milestone order)
 
@@ -67,7 +66,7 @@ A plain-Python state-machine Orchestrator drives the stages, enforces budgets an
 | **M2 Ingestion + DQ** | DuckDB load, schema diff, null/row-count/freshness/dup/range/category-drift checks | Schema-change and tracking-bug scenarios → BLOCK/WARN; clean days → PASS |
 | **M3 Detection + analysis tools** | Baselines, robust-z detector, metric tree (log-diff decomposition), Adtributor-style drill-down, the 7 tools in §6.2, evidence store | Baseline C top-3 ≥ 70% on single-cause scenarios; contributions reconcile within 1% |
 | **M4 Investigation Agent** | `llm/client.py` (caching + cost logging), tool-use loop, budgets (25 calls) | Hypotheses carry evidence ids; no numbers outside tool output |
-| **M5 Critic + Reporting** | Six critic checks (§8), confidence computed in code, numeric-hallucination verifier, MD + JSON report | Critic fixes ≥ 50% of Investigation's wrong Simpson's-paradox and traffic answers; reports pass the verifier |
+| **M5 Critic + Reporting** | ✅ Done | Six critic checks (§8), confidence computed in code, numeric-hallucination verifier, MD + JSON report |
 | **M6 Baselines + eval** | Baseline A (single agent + pandas), No-Critic, Stats-only; `sentinel eval` → `results.csv` + `report.md` | Full metrics table (§10.2) for all systems |
 | **M7 UI + scheduling** | Streamlit (run list, report, click a claim to see its query and result, eval dashboard), daily scheduler, optional Slack webhook | — |
 | **M8 Real data + write-up** | One public dataset adapter (Olist or GA4 sample), README with architecture, results and limitations | — |
@@ -124,7 +123,7 @@ Definition of done is in PRD §17.
 
 ## 7. Places to improve (PRD gaps and risks to settle before or while building)
 
-_Status: items 1–9, 16–18 are resolved (D1–D4, D6, D7, D8, D16, D17, D22). Still open: 10 (Critic budget / which checks are pure code), 11 (verifier rules: first version in `evidence/verifier.py`, D25), 12 (Baseline A sandbox), 13 (cost/pricing), 14–15 (eval matching rules)._
+_Status: items 1–9, 16–18 are resolved (D1–D4, D6, D7, D8, D16, D17, D22). Item 10 resolved (D26): checks 1-5 pure code, check 6 LLM. Still open: 11 (verifier rules, D25), 12 (Baseline A sandbox), 13 (cost/pricing), 14–15 (eval matching rules)._
 
 Record each resolution in `DECISIONS.md`, as the PRD instructs.
 
