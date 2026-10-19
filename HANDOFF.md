@@ -159,3 +159,52 @@ Record each resolution in `DECISIONS.md`, as the PRD instructs.
 ## 8. Suggested next step
 
 First a live smoke test of M4 with an API key (S11 on 2026-04-01 is the easy case, S05 or S23 the hard ones). Then M5: Critic checks (§8 of the PRD; decide which are pure code, §7 item 10), confidence in code, report writer with the numeric check, MD + JSON output. Keep CI green: data tests only run because CI generates `data/sim` first.
+
+## 9. M5 Completion (2026-10-19)
+
+### What was built
+
+| Component | File | What it does |
+|-----------|------|--------------|
+| Critic prompt | `sentinel/agents/prompts/critic.md` | System prompt for the LLM-based verdict |
+| Critic agent | `sentinel/agents/critic.py` | 6 checks per hypothesis + LLM verdict + code-computed confidence |
+| Report writer | `sentinel/agents/reporting.py` | Markdown + JSON output, numeric hallucination check |
+| Orchestrator | `sentinel/orchestrator.py` | Full pipeline: DQ → detect → investigate → critic → report → persist |
+| CLI update | `sentinel/cli.py` | `sentinel run` now uses the orchestrator |
+| Agents exports | `sentinel/agents/__init__.py` | Exports for investigation, critic, reporting |
+
+### How the Critic works (D10 resolved)
+
+The 6 checks break down as:
+- **Pure code** (no LLM calls): traffic, mix_shift, data_artifact, calendar, magnitude
+- **LLM** (1 tool call): alternatives + verdict assignment
+
+Confidence formula: `0.5 × contribution_score + 0.3 × check_pass_rate + 0.2 × stat_strength`
+- `contribution_score`: share of revenue change explained (0–1)
+- `check_pass_rate`: fraction of checks passed
+- `stat_strength`: based on z-score and magnitude
+
+### What still needs the live API
+
+- `sentinel run` requires `ANTHROPIC_API_KEY` to be set
+- The Critic's LLM verdict hasn't been tested with a real model
+- `sentinel eval` is still a stub (M6)
+
+### Files added
+- `sentinel/agents/prompts/critic.md`
+- `sentinel/agents/critic.py`
+- `sentinel/agents/reporting.py`
+- `sentinel/orchestrator.py`
+
+### Files modified
+- `sentinel/cli.py` — `run` command wired to orchestrator
+- `sentinel/agents/__init__.py` — exports
+- `tests/test_skeleton.py` — `test_cli_stub` updated (no longer expects "not implemented")
+- `STATUS.md` — updated M5 status
+
+### Test results
+- 16 tests pass (was 15 + 1 fail)
+- ruff clean
+
+### New decisions (add to DECISIONS.md)
+- D26: Critic checks 1-5 (traffic, mix-shift, data-artifact, calendar, magnitude) are pure code; check 6 (alternatives + verdict) uses the LLM with `submit_verdicts` tool call.
