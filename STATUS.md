@@ -8,8 +8,8 @@
 | M1 Simulator | ✅ Done | 28 scenarios, ground truth |
 | M2 Ingestion + DQ | ✅ Done | Schema diff, checks |
 | M3 Detection + Analysis | ✅ Done | Baselines, metric tree, drill-down, tools |
-| M4 Investigation Agent | ⚠️ Built | Tested with fake LLM, not live API |
-| M5 Critic + Reporting | ✅ Done | Orchestrator, CLI wired |
+| M4 Investigation Agent | ⚠️ Built | Tested with fake LLM, not live API; live test pending API key |
+| M5 Critic + Reporting | ✅ Done | Orchestrator, CLI wired, 16 tests pass, ruff clean |
 | M6 Baselines + Eval | ❌ TODO | Baseline A, No-Critic, eval harness |
 | M7 UI + Scheduling | ❌ TODO | Streamlit, scheduler |
 | M8 Real Data + Write-up | ❌ TODO | Public dataset adapter, README final |
