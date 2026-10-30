@@ -63,14 +63,65 @@ def run(date_str: str, data: str = "data/sim", out: str | None = None, model: st
 
 
 @app.command()
-def eval(scenarios: str = "scenarios/", systems: str = "sentinel", runs: int = 3):
-    """Benchmark systems against scenarios (M6)."""
-    raise typer.Exit(_todo("eval (M6)"))
+def eval(scenarios: str = "all", systems: str = "sentinel,no_critic,baseline_a,stats_only",
+         seeds: str = "42", out: str | None = None):
+    """Benchmark systems on scenarios x seeds -> results.csv + report.md (PRD §10.3).
+
+    scenarios: "all" or comma-separated ids (S01,S11); seeds: comma-separated ints (42,43,44).
+    """
+    from datetime import UTC, datetime
+    from pathlib import Path
+
+    from sentinel.eval import evaluate, summarize, write_report
+
+    out_dir = Path(out) if out else Path("eval/results") / datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    ids = None if scenarios == "all" else scenarios.split(",")
+    df = evaluate(systems.split(","), [int(x) for x in seeds.split(",")], ids, out_dir)
+    typer.echo(summarize(df).round(2).T.to_string())
+    typer.echo(f"Wrote {out_dir / 'results.csv'} and {write_report(df, out_dir)}")
 
 
-def _todo(name: str) -> int:
-    typer.echo(f"{name}: not implemented yet")
-    return 1
+@app.command()
+def daily(data: str = "data/sim", day: str | None = None, out_root: str = "runs"):
+    """Scheduled entry point: analyze `day` (default: yesterday), store the run, ping Slack if configured.
+
+    Cron: `0 7 * * * cd /path/to/Sentinel && sentinel daily --data data/real`
+    Windows Task Scheduler: run `sentinel daily` daily with the project folder as working directory.
+    """
+    from datetime import UTC, datetime, timedelta
+    from pathlib import Path
+
+    from sentinel.delivery import notify_slack
+    from sentinel.orchestrator import Orchestrator
+
+    d = date.fromisoformat(day) if day else datetime.now(UTC).date() - timedelta(days=1)
+    orch = Orchestrator(Path(data), Path(out_root) / f"daily_{d}")
+    report = orch.run(d)
+    typer.echo(f"{d}: {report.status} - {report.headline}")
+    if notify_slack(report):
+        typer.echo("Slack notified.")
+
+
+@app.command()
+def adapt_olist(src: str, out: str = "data/olist"):
+    """Convert the Olist Brazilian e-commerce CSVs in SRC to Sentinel's per-day parquet layout."""
+    from pathlib import Path
+
+    from sentinel.ingestion.olist import convert
+
+    typer.echo(f"Wrote {convert(Path(src), Path(out))} days to {out}")
+
+
+@app.command()
+def ui():
+    """Open the Streamlit UI (run list, reports, evidence behind each claim, eval dashboard)."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    app_path = Path(__file__).parent / "ui" / "app.py"
+    raise typer.Exit(subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_path)],
+                                    check=False).returncode)
 
 
 if __name__ == "__main__":

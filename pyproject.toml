@@ -2,7 +2,7 @@
 name = "sentinel"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2", "typer>=0.12", "pyyaml", "duckdb", "pandas", "numpy", "scipy", "anthropic", "httpx", "pyarrow", "matplotlib"]
+dependencies = ["pydantic>=2", "typer>=0.12", "pyyaml", "duckdb", "pandas", "numpy", "scipy", "anthropic", "httpx", "pyarrow", "matplotlib", "tabulate"]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "ruff"]

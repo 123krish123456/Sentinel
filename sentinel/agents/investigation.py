@@ -91,10 +91,11 @@ def _view(out: dict) -> str:
     return text if len(text) <= 9000 else text[:9000] + "...[truncated]"
 
 
-def _context(day: date, anomalies: list[Anomaly]) -> str:
+def _context(day: date, anomalies: list[Anomaly], hint: str = "") -> str:
     rows = [a.model_dump(mode="json") for a in anomalies]
-    return (f"Date under analysis: {day}. Data quality: PASS. Detected moves vs baseline "
+    text = (f"Date under analysis: {day}. Data quality: PASS. Detected moves vs baseline "
             f"(cite their evidence_id as the start of your chain):\n{json.dumps(rows, indent=1)}")
+    return text + (f"\n\nA reviewer challenged your previous answer. Address this: {hint}" if hint else "")
 
 
 def _check(h: dict, tools: Tools) -> list[str]:
@@ -143,9 +144,9 @@ def _finalize(sub: dict, tools: Tools, day: date, baseline: str) -> Investigatio
 
 
 def investigate(tools: Tools, client, day: date, anomalies: list[Anomaly], baseline: str = "weekday",
-                budget: int | None = None) -> InvestigationResult:
+                budget: int | None = None, hint: str = "") -> InvestigationResult:
     budget = budget or load_settings()["budgets"]["investigation_tool_calls"]
-    messages = [{"role": "user", "content": _context(day, anomalies)}]
+    messages = [{"role": "user", "content": _context(day, anomalies, hint)}]
     calls, retries, nudges, sub = 0, 0, 0, None
     for _ in range(budget + 2 * MAX_SUBMIT_RETRIES + 6):
         spent = calls >= budget

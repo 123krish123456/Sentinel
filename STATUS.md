@@ -8,11 +8,11 @@
 | M1 Simulator | ✅ Done | 28 scenarios, ground truth |
 | M2 Ingestion + DQ | ✅ Done | Schema diff, checks |
 | M3 Detection + Analysis | ✅ Done | Baselines, metric tree, drill-down, tools |
-| M4 Investigation Agent | ✅ Live-tested | Live on S11 via Dahl (DeepSeek found electronics); see HANDOFF §10 |
+| M4 Investigation Agent | ✅ Live-tested | Live on S11 via an OpenAI-compatible provider; see HANDOFF §10 |
 | M5 Critic + Reporting | ✅ Done | Orchestrator, CLI wired, 16 tests pass, ruff clean |
-| M6 Baselines + Eval | ❌ TODO | Baseline A, No-Critic, eval harness |
-| M7 UI + Scheduling | ❌ TODO | Streamlit, scheduler |
-| M8 Real Data + Write-up | ❌ TODO | Public dataset adapter, README final |
+| M6 Baselines + Eval | ✅ Built | Baseline A/No-Critic/Stats-only + `sentinel eval`; stats-only run on 28 x 3 seeds, LLM systems not yet benchmarked |
+| M7 UI + Scheduling | ✅ Built | Streamlit UI, `sentinel daily`, Slack webhook |
+| M8 Real Data + Write-up | ⚠️ Partial | Olist adapter + README results/limitations; LLM benchmark rows and a real-Olist run pending |
 
 ---
 
@@ -73,40 +73,12 @@
 
 ## ❌ Remaining
 
-### M6 — Baselines + Eval Harness
-
-| Task | Description |
-|------|-------------|
-| **Baseline A** | Single LLM agent + pandas tool (sandboxed). Same model as Sentinel. |
-| **Baseline B (No-Critic)** | Sentinel without the Critic. |
-| **Baseline C** | Already done — `Tools.find_causes`. |
-| **Eval harness** | `sentinel eval` → `results.csv` + `report.md`. 3 seeds per scenario. |
-| **Metrics** | Precision/recall, false-positive rate, root-cause accuracy@1/@3, contribution error, hallucination rate. |
-
-**Acceptance:** Full metrics table for all systems.
-
-**Open decisions** (HANDOFF §7 items 12–15):
-- Baseline A sandboxing approach
-- Partial match scoring for filter sets
-- Two-cause scenario scoring
-
-### M7 — UI + Scheduling
-
-| Task | Description |
-|------|-------------|
-| **Streamlit app** | Run list, report view, click claim → query + result, eval dashboard |
-| **Scheduler** | Daily run (cron or APScheduler) |
-| **Alerts** | Optional Slack webhook |
-
-### M8 — Real Data + Write-up
-
-| Task | Description |
-|------|-------------|
-| **Public dataset adapter** | Olist or GA4 sample → same per-day parquet layout |
-| **README final** | Architecture diagram, benchmark results, limitations |
-| **Final eval** | Run full benchmark, report honestly |
-
----
+| Item | What is needed |
+|------|----------------|
+| LLM benchmark | Run `sentinel eval` for `sentinel,no_critic,baseline_a` (needs a provider with enough rate limit; free-tier Dahl was too constrained) and add the rows to the README results table |
+| Live Critic | Verify the Critic's real LLM verdict and the revise loop on a live model |
+| Real data | Download Olist, run `sentinel adapt-olist`, then `sentinel daily --data data/olist --day <date>`; DQ thresholds are tuned for the simulator |
+| Cost | Set `pricing:` in `config/settings.yaml` to get $ per run (PRD target <= $0.50) |
 
 ## Key Invariants (must hold)
 

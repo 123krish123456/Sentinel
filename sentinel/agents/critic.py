@@ -200,7 +200,7 @@ def _unreviewed(h: Hypothesis, checks_by_id: dict[str, list[dict]]) -> CriticVer
 
 def _verdict_from_llm(client, messages: list, hypotheses: list[Hypothesis],
                       checks_by_id: dict[str, list[dict]], day: date,
-                      rejected_alternatives: list[dict]) -> list[CriticVerdict]:
+                      rejected_alternatives: list[dict]) -> tuple[list[CriticVerdict], list[dict]]:
     """Ask the LLM to assign verdicts based on the pre-computed checks."""
     verdict_spec = {
         "name": "submit_verdicts",
@@ -236,13 +236,13 @@ def _verdict_from_llm(client, messages: list, hypotheses: list[Hypothesis],
     # Extract tool use
     uses = [b for b in resp["content"] if b["type"] == "tool_use"]
     if not uses:
-        return [_unreviewed(h, checks_by_id) for h in hypotheses]
+        return [_unreviewed(h, checks_by_id) for h in hypotheses], []
 
     verdict_call = uses[0]
     verdicts_raw = verdict_call.get("input", {}).get("verdicts", [])
 
     # Match to hypotheses and compute confidence
-    verdicts = []
+    verdicts, hints = [], []
     for v in verdicts_raw:
         hid = v.get("hypothesis_id", "")
         h = next((x for x in hypotheses if x.id == hid), None)
@@ -261,8 +261,11 @@ def _verdict_from_llm(client, messages: list, hypotheses: list[Hypothesis],
             checks_run=[c["check"] for c in checks],
             confidence=confidence,
         ))
+        if v.get("verdict") == "revise":
+            hints.append({"hypothesis_id": hid,
+                          "hint": v.get("revision_hint") or "; ".join(v.get("reasons", []))})
     seen = {v.hypothesis_id for v in verdicts}
-    return verdicts + [_unreviewed(h, checks_by_id) for h in hypotheses if h.id not in seen]
+    return verdicts + [_unreviewed(h, checks_by_id) for h in hypotheses if h.id not in seen], hints
 
 
 # ----------------------------------------------------------------------------- #
@@ -311,13 +314,8 @@ def review(tools: Tools, client, hypotheses: list[Hypothesis], day: date,
         checks_by_id[h.id] = checks
 
     # Get LLM verdict (uses 1 tool call for submit_verdicts)
-    verdicts = _verdict_from_llm(client, [], hypotheses, checks_by_id, day, [])
-    tool_calls += 1
-
-    # For now, we don't implement revision loops in the Critic (M5 basic version)
-    # The LLM verdict already accounts for all checks
-    # Revision loops would be implemented in the orchestrator calling back to investigation
-    revision_hints: list[dict] = []
+    verdicts, revision_hints = _verdict_from_llm(client, [], hypotheses, checks_by_id, day, [])
+    tool_calls += 1  # the orchestrator runs the revise loop using revision_hints
 
     result = CriticResult(
         verdicts=verdicts,
