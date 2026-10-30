@@ -189,6 +189,15 @@ def _context(day: date, hypotheses: list[Hypothesis], checks_by_id: dict[str, li
     return "\n".join(lines)
 
 
+def _unreviewed(h: Hypothesis, checks_by_id: dict[str, list[dict]]) -> CriticVerdict:
+    """No LLM verdict: keep the hypothesis but flag it and cap its confidence (never a silent accept)."""
+    checks = checks_by_id.get(h.id, [])
+    return CriticVerdict(hypothesis_id=h.id, verdict="accept",
+                         reasons=["UNREVIEWED: critic returned no verdict"],
+                         checks_run=[c["check"] for c in checks],
+                         confidence=min(_compute_confidence(checks, h.contribution_pct, False), 0.3))
+
+
 def _verdict_from_llm(client, messages: list, hypotheses: list[Hypothesis],
                       checks_by_id: dict[str, list[dict]], day: date,
                       rejected_alternatives: list[dict]) -> list[CriticVerdict]:
@@ -220,19 +229,14 @@ def _verdict_from_llm(client, messages: list, hypotheses: list[Hypothesis],
     ctx = _context(day, hypotheses, checks_by_id, rejected_alternatives)
     messages = [{"role": "user", "content": ctx}]
 
-    resp = client.create(PROMPT, messages, [verdict_spec], None)
+    resp = client.create(PROMPT, messages, [verdict_spec],
+                         {"type": "tool", "name": "submit_verdicts"})
     messages.append({"role": "assistant", "content": resp["content"]})
 
     # Extract tool use
     uses = [b for b in resp["content"] if b["type"] == "tool_use"]
     if not uses:
-        # Fallback: accept all if LLM doesn't respond with verdicts
-        return [
-            CriticVerdict(hypothesis_id=h.id, verdict="accept", reasons=["LLM timeout, accepting by default"],
-                          checks_run=[c["check"] for c in checks_by_id.get(h.id, [])],
-                          confidence=0.5)
-            for h in hypotheses
-        ]
+        return [_unreviewed(h, checks_by_id) for h in hypotheses]
 
     verdict_call = uses[0]
     verdicts_raw = verdict_call.get("input", {}).get("verdicts", [])
@@ -257,7 +261,8 @@ def _verdict_from_llm(client, messages: list, hypotheses: list[Hypothesis],
             checks_run=[c["check"] for c in checks],
             confidence=confidence,
         ))
-    return verdicts
+    seen = {v.hypothesis_id for v in verdicts}
+    return verdicts + [_unreviewed(h, checks_by_id) for h in hypotheses if h.id not in seen]
 
 
 # ----------------------------------------------------------------------------- #

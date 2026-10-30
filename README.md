@@ -9,7 +9,7 @@ evidence-backed hypotheses about the cause.
 
 > "Something changed. Figure out what happened, why it happened, and tell me whether I need to act."
 
-**Status:** M0–M5 complete. M4 (investigation agent) is built but untested against live API. `sentinel run` is wired to the full pipeline. See [Team](#team) for who owns what, [HANDOFF.md](HANDOFF.md) for detailed status and [PRD.md](PRD.md) for the full spec.
+**Status:** M0–M5 complete. M4 investigation agent verified live on S11 (OpenAI-compatible provider, see HANDOFF §10). `sentinel run` is wired to the full pipeline. See [Team](#team) for who owns what, [HANDOFF.md](HANDOFF.md) for detailed status and [PRD.md](PRD.md) for the full spec.
 
 ## How it works
 

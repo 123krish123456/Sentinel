@@ -8,7 +8,7 @@
 | M1 Simulator | ✅ Done | 28 scenarios, ground truth |
 | M2 Ingestion + DQ | ✅ Done | Schema diff, checks |
 | M3 Detection + Analysis | ✅ Done | Baselines, metric tree, drill-down, tools |
-| M4 Investigation Agent | ⚠️ Built | Tested with fake LLM, not live API; live test pending API key |
+| M4 Investigation Agent | ✅ Live-tested | Live on S11 via Dahl (DeepSeek found electronics); see HANDOFF §10 |
 | M5 Critic + Reporting | ✅ Done | Orchestrator, CLI wired, 16 tests pass, ruff clean |
 | M6 Baselines + Eval | ❌ TODO | Baseline A, No-Critic, eval harness |
 | M7 UI + Scheduling | ❌ TODO | Streamlit, scheduler |

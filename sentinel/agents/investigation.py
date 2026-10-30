@@ -121,6 +121,10 @@ def _finalize(sub: dict, tools: Tools, day: date, baseline: str) -> Investigatio
         except Exception as e:  # noqa: BLE001 - a bad filter drops one hypothesis, not the run
             res.dropped.append(f"{h['statement'][:60]!r}: bad segment_filters ({e})")
             continue
+        key = tuple(sorted(h["segment_filters"].items()))
+        if dup := next((x for x in hyps if tuple(sorted(x.segment_filters.items())) == key), None):
+            dup.evidence_ids += [e for e in ids if e not in dup.evidence_ids]  # same segment: merge
+            continue
         hyps.append(Hypothesis(
             id=f"H{i}", statement=h["statement"], segment_filters=h["segment_filters"],
             chain=[e for e in h.get("chain", []) if e in tools.store.items],

@@ -115,6 +115,6 @@ class ReportWriter:
         if output_dir:
             import json
             (output_dir / "report.json").write_text(json.dumps(out, indent=2, default=str))
-            (output_dir / "report.md").write_text(report.markdown)
+            (output_dir / "report.md").write_text(report.markdown, encoding="utf-8")
 
         return report

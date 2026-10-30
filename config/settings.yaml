@@ -1,4 +1,7 @@
-model: claude-sonnet-5-5
+model: deepseek-ai/DeepSeek-V4-Flash-0731
+# OpenAI-compatible endpoint (key read from the env var). Remove `provider` and set a claude-* model
+# above to use the Anthropic API instead.
+provider: {base_url: "https://inference.dahl.global/v1", api_key_env: DAHL_API_KEY}
 temperature: 0
 seed: 42
 detection:

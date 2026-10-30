@@ -16,6 +16,7 @@ class LLMClient:
         cfg = load_settings()
         self.model = model or cfg["model"]
         self.temperature = cfg["temperature"] if temperature is None else temperature
+        self.provider = cfg.get("provider")  # {base_url, api_key_env}; unset -> Anthropic
         self.pricing = cfg.get("pricing") or {}  # {input_per_mtok, output_per_mtok}; unset -> cost None
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -36,9 +37,14 @@ class LLMClient:
             self.cache_hits += 1
             return json.loads(f.read_text())
         if self._api is None:
-            import anthropic  # reads ANTHROPIC_API_KEY from the environment
+            if self.provider:  # OpenAI-compatible endpoint from settings.yaml `provider`
+                from sentinel.llm.openai_compat import OpenAICompatAPI
 
-            self._api = anthropic.Anthropic()
+                self._api = OpenAICompatAPI(self.provider["base_url"], self.provider["api_key_env"])
+            else:
+                import anthropic  # reads ANTHROPIC_API_KEY from the environment
+
+                self._api = anthropic.Anthropic()
         kw = {"tool_choice": tool_choice} if tool_choice else {}
         r = self._api.messages.create(model=self.model, system=system, messages=messages, tools=tools,
                                       temperature=self.temperature, max_tokens=max_tokens, **kw)
