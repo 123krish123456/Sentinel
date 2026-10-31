@@ -1,0 +1,8 @@
+seed,scenario,date,category,system,status,dq_status,error,latency_s,claims,claims_supported,numbers,numbers_unsupported,dropped,llm_calls,input_tokens,output_tokens,cost_usd,causes,alert,expected_alert,is_none,is_data_issue,flagged_data_issue,acc1,acc3,overlap3,both3,n_true_causes,contribution_err
+42,S11,2026-04-01,business,sentinel,anomaly,PASS,,2332.1,1.0,1.0,15.0,0.0,1.0,19.0,132206.0,24517.0,,"[{""filters"": {""category"": ""electronics""}, ""contribution_pct"": 99.20804476351726}]",True,True,False,False,False,True,True,True,,1.0,0.7919552364827354
+42,S11,2026-04-01,business,no_critic,anomaly,PASS,,1640.4,1.0,1.0,8.0,0.0,0.0,7.0,57116.0,9460.0,,"[{""filters"": {""category"": ""electronics""}, ""contribution_pct"": 99.20804476351726}]",True,True,False,False,False,True,True,True,,1.0,0.7919552364827354
+42,S11,2026-04-01,business,baseline_a,anomaly,,,828.1,3.0,1.0,19.0,3.0,0.0,8.0,32125.0,3849.0,,"[{""filters"": {""event_type"": ""view""}, ""contribution_pct"": null}, {""filters"": {""category"": ""electronics""}, ""contribution_pct"": null}, {""filters"": {""category"": ""fashion""}, ""contribution_pct"": null}]",True,True,False,False,False,False,True,True,,1.0,100.0
+42,S25,2026-06-10,none,sentinel,normal,PASS,,1.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,[],False,False,True,False,False,,,,,,
+42,S25,2026-06-10,none,no_critic,normal,PASS,,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,[],False,False,True,False,False,,,,,,
+42,S25,2026-06-10,none,baseline_a,error,,"HTTPStatusError: Client error '429 Too Many Requests' for url 'https://inference.dahl.global/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429",366.7,,,,,,,,,,[],,,,,,,,,,,

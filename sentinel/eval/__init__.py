@@ -120,7 +120,9 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
     """One row per system: the PRD §10.2 metrics, aggregated across scenarios and seeds."""
     rows = []
     for system, d in df.groupby("system"):
-        ok = d[d["error"].isna()]
+        ok = d[d["error"].isna()].copy()
+        for c in ("alert", "expected_alert", "is_none", "is_data_issue"):  # object dtype if a CSV has gaps
+            ok[c] = ok[c].eq(True)
         tp = (ok.alert & ok.expected_alert).sum()
         rows.append({
             "system": system, "runs": len(d), "errors": int(d["error"].notna().sum()),
