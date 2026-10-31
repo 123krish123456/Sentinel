@@ -17,7 +17,7 @@ DATA_ISSUES = {"tracking_bug", "schema_change", "late_data", "duplicate_events",
 def load_scenarios(path: str | Path) -> list[dict]:
     out = []
     for f in sorted(Path(path).glob("*.yaml")):
-        d = yaml.safe_load(f.read_text())
+        d = yaml.safe_load(f.read_text(encoding="utf-8"))
         out += d if isinstance(d, list) else [d]
     return out
 

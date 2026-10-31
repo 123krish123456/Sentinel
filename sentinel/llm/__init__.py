@@ -51,7 +51,9 @@ class LLMClient:
         out = {"content": [b.model_dump(exclude_none=True) for b in r.content],
                "stop_reason": r.stop_reason,
                "usage": {"input_tokens": r.usage.input_tokens, "output_tokens": r.usage.output_tokens}}
-        f.write_text(json.dumps(out))
+        tmp = f.with_suffix(".tmp")  # atomic: a killed run must not leave a half-written cache entry
+        tmp.write_text(json.dumps(out))
+        tmp.replace(f)
         self.input_tokens += out["usage"]["input_tokens"]
         self.output_tokens += out["usage"]["output_tokens"]
         return out

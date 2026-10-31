@@ -73,13 +73,22 @@ class _Messages:
                 "tools": [{"type": "function", "function": {
                     "name": t["name"], "description": t["description"],
                     "parameters": t["input_schema"]}} for t in tools]}
-        if tool_choice:
+        if tool_choice and tool_choice.get("type") == "any":
+            body["tool_choice"] = "required"
+        elif tool_choice and tool_choice.get("name"):
             body["tool_choice"] = {"type": "function", "function": {"name": tool_choice["name"]}}
         for attempt in range(8):
-            r = httpx.post(self.url, json=body, timeout=self.timeout,
-                           headers={"Authorization": f"Bearer {self.key}"})
+            try:
+                r = httpx.post(self.url, json=body, timeout=self.timeout,
+                               headers={"Authorization": f"Bearer {self.key}"})
+            except httpx.TransportError:  # timeouts, dropped connections
+                if attempt == 7:
+                    raise
+                time.sleep(2 ** attempt)
+                continue
             if r.status_code in (429, 500, 502, 503, 504, 520, 522, 524) and attempt < 7:
-                time.sleep(max(float(r.headers.get("retry-after", 0)), 2 ** attempt))
+                ra = r.headers.get("retry-after", "0")
+                time.sleep(max(float(ra) if ra.replace(".", "", 1).isdigit() else 0, 2 ** attempt))
                 continue
             r.raise_for_status()
             return _to_anthropic(r.json())

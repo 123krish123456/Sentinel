@@ -73,7 +73,9 @@ def clean_baseline_days(data_dir: Path, days: list[date]) -> list[date]:
 
 
 def baseline_cube(data_dir: Path, days: list[date]) -> pd.DataFrame:
-    """Mean daily cube over `days` (per-segment mean daily counts)."""
+    """Mean daily cube over `days` (per-segment mean daily counts); empty if there is no history."""
+    if not days:
+        return pd.DataFrame({c: pd.Series(dtype=object if c in DIMS else float) for c in DIMS + COUNTS})
     cat = pd.concat([day_cube(data_dir, d) for d in days])
     return cat.groupby(DIMS, as_index=False)[COUNTS].sum().assign(
         **{c: lambda x, c=c: x[c] / len(days) for c in COUNTS})

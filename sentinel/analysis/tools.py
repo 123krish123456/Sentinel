@@ -9,6 +9,7 @@ import pandas as pd
 from scipy.stats import chi2_contingency
 
 from sentinel.analysis.cube import (
+    DIMS,
     baseline_cube,
     clean_baseline_days,
     day_cube,
@@ -21,6 +22,8 @@ from sentinel.analysis.metric_tree import METRICS, decompose, metric_value
 from sentinel.detection import baseline_z, robust_z
 from sentinel.evidence import EvidenceStore
 from sentinel.ingestion import day_file
+
+SESSION_DIMS = [d for d in DIMS if d != "payment_method"]  # columns of the sessions table
 
 
 def _d(x) -> date:
@@ -68,7 +71,7 @@ class Tools:
     def find_causes(self, date: str, baseline: str = "weekday", metric: str = "revenue") -> dict:
         """Automatic tree walk + drill-down (what Baseline C runs). Returns ranked candidate causes."""
         d = _d(date)
-        z = {m: baseline_z(self.data_dir, d, m)[0] for m in METRICS}
+        z = {m: (baseline_z(self.data_dir, d, m) or (0.0,))[0] for m in METRICS}  # < 2 history days: no z
         causes = find_causes(day_cube(self.data_dir, d), self._base(d, baseline), metric, z)
         return self._out("find_causes", {"date": date, "baseline": baseline, "metric": metric},
                          {"causes": causes, "metric_z": z})
@@ -102,7 +105,7 @@ class Tools:
         days = clean_baseline_days(self.data_dir, window_days(d, baseline))
         hist = [float(filt(day_cube(self.data_dir, x), filters)["S"].sum()) for x in days]
         v = float(filt(day_cube(self.data_dir, d), filters)["S"].sum())
-        z, med = robust_z(v, hist)
+        z, med = robust_z(v, hist) if hist else (0.0, None)
         return self._out("check_traffic", {"date": date, "baseline": baseline, "filters": filters},
                          {"sessions": v, "baseline": med, "pct_change": v / med - 1 if med else None,
                           "z": z, "within_normal": abs(z) < 2})
@@ -111,6 +114,8 @@ class Tools:
                    group_by: str = "error_code") -> dict:
         if group_by not in ("error_code", "payment_method", "category"):
             raise ValueError(group_by)
+        if bad := set(filters or {}) - set(SESSION_DIMS):  # keys go into SQL: whitelist (LLM input)
+            raise ValueError(f"unknown session dimension(s) {sorted(bad)}")
         d = _d(date)
         where = "".join(f" and s.{k} = ?" for k in (filters or {}))
         sql = (f"select coalesce(e.{group_by}, 'none') g, count(*) n from read_parquet(?) e join "

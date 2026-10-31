@@ -2,7 +2,6 @@
 
 
 from sentinel.evidence import EvidenceStore
-from sentinel.evidence.verifier import unsupported_numbers
 from sentinel.models import Hypothesis, Report
 
 
@@ -88,28 +87,8 @@ class ReportWriter:
         Returns:
             The same Report with markdown and json filled in
         """
-        # Verify all hypothesis numbers are traceable
-        all_hyps = [report.primary_cause] + report.secondary_causes if report.primary_cause else report.secondary_causes
-        for h in all_hyps:
-            if not h:
-                continue
-            bad = unsupported_numbers(h.statement, store, h.evidence_ids)
-            if bad:
-                # Drop the hypothesis - it's not traceable
-                pass  # Keep it for now, let the caller decide
-
-        # Build markdown
+        # (numbers were already verified by the Investigation agent, which drops untraceable statements)
         report.markdown = _build_markdown(report, store)
-
-        # Verify markdown has no untraced numbers (for the whole report)
-        all_ids = []
-        for h in all_hyps:
-            if h:
-                all_ids.extend(h.evidence_ids)
-        for r in report.rejected:
-            all_ids.extend(r.hypothesis.evidence_ids)
-
-        # Save JSON
         out = report.model_dump(mode="json")
 
         if output_dir:

@@ -14,7 +14,7 @@ METRICS = {
     "checkout_start_rate": ("C", "A"), "payment_attempt_rate": ("P", "C"),
     "payment_success_rate": ("O", "P"),
 }
-TREE = yaml.safe_load((ROOT / "config" / "metric_tree.yaml").read_text())
+TREE = yaml.safe_load((ROOT / "config" / "metric_tree.yaml").read_text(encoding="utf-8"))
 # payment_method only exists once a session attempts payment, so these can't be split by it
 NO_PM = {"sessions", "conversion_rate", "atc_rate", "checkout_start_rate", "payment_attempt_rate"}
 

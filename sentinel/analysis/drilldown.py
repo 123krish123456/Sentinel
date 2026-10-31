@@ -103,7 +103,7 @@ def find_causes(now: pd.DataFrame, base: pd.DataFrame, metric: str = "revenue",
     cands = []
 
     def sig(k):  # a leaf must have really moved, and by more than its own day-to-day noise
-        if abs(k["value"] / k["baseline"] - 1) < 0.03:
+        if not k["baseline"] or abs(k["value"] / k["baseline"] - 1) < 0.03:
             return False
         return abs(z[k["metric"]]) >= Z_MIN if z else k["share"] >= MIN_SHARE
 

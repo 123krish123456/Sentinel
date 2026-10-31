@@ -66,7 +66,9 @@ class Orchestrator:
                 run_id=self.run_id, date=day, status="normal", confidence=1.0,
                 headline="No significant metric changes detected.", recommended_action="No action needed."))
 
-        inv = self.investigation_result = investigate(self.tools, self.client, day, self.anomalies, baseline)
+        dq_text = dq.status + "".join(f"; {i.check}: {i.detail}" for i in dq.issues)
+        inv = self.investigation_result = investigate(self.tools, self.client, day, self.anomalies, baseline,
+                                                      dq=dq_text)
         crit = None
         if self.use_critic and inv.hypotheses:
             crit = review(self.tools, self.client, inv.hypotheses, day, self.dq_report, baseline)
@@ -75,7 +77,7 @@ class Orchestrator:
                     break
                 hint = " | ".join(f"{r['hypothesis_id']}: {r['hint']}" for r in crit.revisions_requested)
                 inv = self.investigation_result = investigate(
-                    self.tools, self.client, day, self.anomalies, baseline, hint=hint)
+                    self.tools, self.client, day, self.anomalies, baseline, hint=hint, dq=dq_text)
                 if not inv.hypotheses:
                     break
                 crit = review(self.tools, self.client, inv.hypotheses, day, self.dq_report, baseline)

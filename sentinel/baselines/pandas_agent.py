@@ -103,16 +103,28 @@ def run(client, data_dir: Path, day: date, store: EvidenceStore) -> dict:
                 ans = u["input"]
                 break
             calls += 1
-            out = run_sandboxed(u["input"].get("code", ""), data_dir)
-            ev = store.add("run_python", {"code": u["input"].get("code", "")[:2000]}, None,
+            code = str(u["input"].get("code", ""))
+            out = run_sandboxed(code, data_dir)
+            ev = store.add("run_python", {"code": code[:2000]}, None,
                            {"output": out, "numbers": _nums(out)})
             results.append({"type": "tool_result", "tool_use_id": u["id"],
                             "content": json.dumps({"evidence_id": ev.evidence_id, "output": out})})
         if ans is not None:
             break
         messages.append({"role": "user", "content": results})
-    ans = ans or {"status": "normal", "causes": []}
+    ans = ans if isinstance(ans, dict) else {}
     ids = list(store.items)
-    causes = [{"filters": c.get("filters", {}), "contribution_pct": c.get("contribution_pct"),
-               "statement": c.get("statement", ""), "evidence_ids": ids} for c in ans.get("causes", [])]
-    return {"status": ans.get("status", "normal"), "causes": causes, "calls": calls}
+    causes = [{"filters": {str(k): str(v) for k, v in c["filters"].items()}
+               if isinstance(c.get("filters"), dict) else {},
+               "contribution_pct": _num(c.get("contribution_pct")),
+               "statement": str(c.get("statement", "")), "evidence_ids": ids}
+              for c in (ans.get("causes") if isinstance(ans.get("causes"), list) else []) if isinstance(c, dict)]
+    status = ans.get("status") if ans.get("status") in ("normal", "anomaly", "data_issue") else "normal"
+    return {"status": status, "causes": causes, "calls": calls}
+
+
+def _num(x) -> float | None:
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None

@@ -11,7 +11,7 @@ from sentinel.config import ROOT
 from sentinel.ingestion import TABLES, history_days, load_day
 from sentinel.models import DQIssue, DQReport
 
-SCHEMA = yaml.safe_load((ROOT / "config" / "schema.yaml").read_text())
+SCHEMA = yaml.safe_load((ROOT / "config" / "schema.yaml").read_text(encoding="utf-8"))
 CATEGORICAL = {
     "sessions": ["platform", "os", "app_version", "country", "traffic_source", "device_type",
                  "new_vs_returning", "category"],
@@ -76,11 +76,13 @@ def check_day(data_dir: Path, day: date) -> DQReport:
         if hs:
             # sessions drop legitimately in business scenarios (traffic), orders too: only block on
             # gross loss of sessions, and on events-per-session (a funnel change can't move it much)
+            # (an empty table or empty history gives ratio 0 / 1 instead of dividing by zero)
+            div = lambda a, b: a / b if b else (1.0 if not a else float("inf"))
             if t == "sessions":
-                ratio = today[t]["rows"] / median(x["rows"] for x in hs)
-            elif t == "events" and "sessions" in today:
-                ratio = (today[t]["rows"] / today["sessions"]["rows"]) / median(
-                    x[t]["rows"] / x["sessions"]["rows"] for x in hist if t in x and "sessions" in x)
+                ratio = div(today[t]["rows"], median(x["rows"] for x in hs))
+            elif t == "events" and "sessions" in today and today["sessions"]["rows"]:
+                ratio = div(today[t]["rows"] / today["sessions"]["rows"], median(
+                    div(x[t]["rows"], x["sessions"]["rows"]) for x in hist if t in x and "sessions" in x))
             else:
                 ratio = 1.0
             if ratio < ROW_BLOCK_RATIO:

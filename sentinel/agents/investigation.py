@@ -91,11 +91,21 @@ def _view(out: dict) -> str:
     return text if len(text) <= 9000 else text[:9000] + "...[truncated]"
 
 
-def _context(day: date, anomalies: list[Anomaly], hint: str = "") -> str:
+def _context(day: date, anomalies: list[Anomaly], hint: str = "", dq: str = "PASS") -> str:
     rows = [a.model_dump(mode="json") for a in anomalies]
-    text = (f"Date under analysis: {day}. Data quality: PASS. Detected moves vs baseline "
+    text = (f"Date under analysis: {day}. Data quality: {dq}. Detected moves vs baseline "
             f"(cite their evidence_id as the start of your chain):\n{json.dumps(rows, indent=1)}")
     return text + (f"\n\nA reviewer challenged your previous answer. Address this: {hint}" if hint else "")
+
+
+def _clean(items) -> list[dict]:
+    """Coerce model-submitted items to the expected shape (bad types become empty, never a crash)."""
+    lst = lambda x: [str(i) for i in x] if isinstance(x, list) else []
+    return [{**h, "statement": str(h.get("statement", "")), "evidence_ids": lst(h.get("evidence_ids")),
+             "chain": lst(h.get("chain")),
+             "segment_filters": {str(k): str(v) for k, v in h["segment_filters"].items()}
+             if isinstance(h.get("segment_filters"), dict) else {}}
+            for h in (items if isinstance(items, list) else []) if isinstance(h, dict)]
 
 
 def _check(h: dict, tools: Tools) -> list[str]:
@@ -144,9 +154,10 @@ def _finalize(sub: dict, tools: Tools, day: date, baseline: str) -> Investigatio
 
 
 def investigate(tools: Tools, client, day: date, anomalies: list[Anomaly], baseline: str = "weekday",
-                budget: int | None = None, hint: str = "") -> InvestigationResult:
+                budget: int | None = None, hint: str = "", dq: str = "PASS") -> InvestigationResult:
+    """`dq` is the DQ status plus any warnings, shown to the model so it can weigh data artifacts."""
     budget = budget or load_settings()["budgets"]["investigation_tool_calls"]
-    messages = [{"role": "user", "content": _context(day, anomalies, hint)}]
+    messages = [{"role": "user", "content": _context(day, anomalies, hint, dq)}]
     calls, retries, nudges, sub = 0, 0, 0, None
     for _ in range(budget + 2 * MAX_SUBMIT_RETRIES + 6):
         spent = calls >= budget
@@ -163,7 +174,8 @@ def investigate(tools: Tools, client, day: date, anomalies: list[Anomaly], basel
         results = []
         for u in uses:
             if u["name"] == "submit_hypotheses":
-                sub = u["input"]
+                sub = {"hypotheses": _clean(u["input"].get("hypotheses")),
+                       "rejected_alternatives": _clean(u["input"].get("rejected_alternatives"))}
                 problems = [f"{h['statement'][:50]!r}: {e}" for h in sub.get("hypotheses", [])
                             for e in _check(h, tools)]
                 if problems and retries < MAX_SUBMIT_RETRIES:

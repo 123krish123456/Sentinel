@@ -42,12 +42,14 @@ def _check_mix_shift(tools: Tools, filters: dict, day: date, baseline: str) -> d
     if not seg_dims:
         return {"check": "mix_shift", "passed": True, "detail": "global segment, no mix check needed"}
 
-    # Check if the overall distribution of the segment's key dimension shifted
+    # Did the segment's share of traffic shift? Compare its dimension's mix inside the parent (the
+    # other filters); filtering on the dimension itself would leave one value and always pass.
     primary_dim = seg_dims[0]
     if primary_dim not in dims_for("sessions"):
         primary_dim = "platform"
+    parent = {k: v for k, v in filters.items() if k != primary_dim}
 
-    dist = tools.compare_distributions(primary_dim, str(day), baseline, filters)
+    dist = tools.compare_distributions(primary_dim, str(day), baseline, parent)
     r = dist["result"]
     p_value = r.get("p_value", 1.0)
     # p < 0.05 means the distribution significantly shifted -> potential mix shift
@@ -71,20 +73,21 @@ def _check_data_artifact(dq_status: str, dq_issues: list[dict], filters: dict) -
     relevant = False
     if has_dq_issue:
         for issue in dq_issues:
-            detail = issue.get("detail", "").lower()
-            # Schema, freshness, row-count issues affect the whole day, not a specific segment
-            # Funnel/order issues might be localized
-            if any(d in detail for d in ("funnel", "order_mismatch", "tracking")):
-                relevant = True
+            # Funnel/order tracking issues can fake a conversion drop anywhere; column-level issues
+            # (null spike, new values) matter when they hit a dimension the segment filters on.
+            detail = issue.get("detail", "")
+            if issue.get("check") in ("funnel_order", "event_order_mismatch") or any(
+                    f".{k}:" in detail for k in filters):
+                relevant = detail or issue.get("check", "unknown")
                 break
 
     return {
         "check": "data_artifact",
         "passed": not relevant,
         "detail": "data issue not relevant to segment" if not relevant
-                  else f"potential data artifact: {dq_issues[0]['detail'] if dq_issues else 'unknown'}",
+                  else f"potential data artifact: {relevant}",
         "dq_status": dq_status,
-        "has_relevant_issue": relevant,
+        "has_relevant_issue": bool(relevant),
     }
 
 
@@ -92,7 +95,7 @@ def _check_calendar(day: date) -> dict:
     """Check 4: is today a known calendar event (sale, holiday) that would explain the change?"""
     settings = load_settings()
     sale_days = settings.get("simulator_extra", {}).get("sale_days", [])
-    is_sale = str(day) in sale_days
+    is_sale = str(day) in map(str, sale_days)  # YAML parses these as dates, not strings
 
     return {
         "check": "calendar",

@@ -18,7 +18,7 @@ def convert(src: Path, out: Path) -> int:
     """Write out/{sessions,events,orders}/<date>.parquet from the Olist CSVs in `src`. Returns #days."""
     rd = lambda n: pd.read_csv(Path(src) / f"olist_{n}_dataset.csv")
     orders = rd("orders")
-    orders = orders[orders.order_status.isin(["delivered", "shipped", "invoiced", "approved"])]
+    orders = orders[orders.order_status.isin(["delivered", "shipped", "invoiced", "approved"])].copy()
     orders["ts"] = pd.to_datetime(orders.order_purchase_timestamp)
     cust = rd("customers")[["customer_id", "customer_state"]]
     pay = rd("order_payments").groupby("order_id").agg(
