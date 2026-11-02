@@ -87,6 +87,6 @@ with tab_eval:
         st.subheader("Summary by system")
         summ = summarize(df)
         st.dataframe(summ.round(3), width="stretch")
-        st.bar_chart(summ[["acc@1", "acc@3", "numeric_hallucination"]])
+        st.bar_chart(summ[["acc@1", "acc@3", "numeric_hallucination"]], stack=False)
         st.subheader("All runs")
         st.dataframe(df.drop(columns=["causes"]), width="stretch", hide_index=True)
