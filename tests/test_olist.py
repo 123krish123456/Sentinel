@@ -1,6 +1,6 @@
 import pandas as pd
 
-from sentinel.ingestion.olist import convert
+from axiom.ingestion.olist import convert
 
 
 def test_convert_tiny_olist(tmp_path):

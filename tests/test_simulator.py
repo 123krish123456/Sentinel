@@ -2,8 +2,8 @@ import json
 
 import pandas as pd
 
-from sentinel.simulator.generator import simulate
-from sentinel.simulator.injector import load_scenarios
+from axiom.simulator.generator import simulate
+from axiom.simulator.injector import load_scenarios
 
 
 def test_at_least_25_scenarios_with_unique_dates():

@@ -5,14 +5,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from sentinel.analysis.cube import baseline_cube, clean_baseline_days, day_cube, window_days
-from sentinel.analysis.drilldown import find_causes, segments
-from sentinel.analysis.metric_tree import METRICS, decompose
-from sentinel.analysis.tools import Tools
-from sentinel.detection import baseline_z
+from axiom.analysis.cube import baseline_cube, clean_baseline_days, day_cube, window_days
+from axiom.analysis.drilldown import find_causes, segments
+from axiom.analysis.metric_tree import METRICS, decompose
+from axiom.analysis.tools import Tools
+from axiom.detection import baseline_z
 
 DATA = Path("data/sim")
-needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `sentinel simulate --out data/sim` first")
+needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `axiom simulate --out data/sim` first")
 
 
 def _cube(rows):

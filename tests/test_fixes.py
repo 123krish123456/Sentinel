@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from sentinel.agents.critic import _check_calendar, _check_data_artifact, _check_mix_shift
-from sentinel.agents.investigation import _clean
-from sentinel.analysis.tools import Tools
-from sentinel.baselines.pandas_agent import run as baseline_a
+from axiom.agents.critic import _check_calendar, _check_data_artifact, _check_mix_shift
+from axiom.agents.investigation import _clean
+from axiom.analysis.tools import Tools
+from axiom.baselines.pandas_agent import run as baseline_a
 
 DATA = Path("data/sim")
-needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `sentinel simulate --out data/sim` first")
+needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `axiom simulate --out data/sim` first")
 
 
 def test_get_events_rejects_sql_in_filter_keys():
@@ -56,7 +56,7 @@ def test_malformed_model_output_is_coerced():
             return {"content": [{"type": "tool_use", "id": "1", "name": "submit_answer",
                                  "input": {"status": "weird", "causes": [{"filters": ["x"],
                                                                           "contribution_pct": "lots"}]}}]}
-    from sentinel.evidence import EvidenceStore
+    from axiom.evidence import EvidenceStore
     out = baseline_a(Fake(), DATA, date(2026, 4, 1), EvidenceStore())
     assert out["status"] == "normal" and out["causes"][0]["filters"] == {}
     assert out["causes"][0]["contribution_pct"] is None

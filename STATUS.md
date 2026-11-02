@@ -1,4 +1,4 @@
-# Sentinel: Implementation Status
+# Axiom: Implementation Status
 
 ## Overview
 
@@ -10,8 +10,8 @@
 | M3 Detection + Analysis | ✅ Done | Baselines, metric tree, drill-down, tools |
 | M4 Investigation Agent | ✅ Live-tested | Live on S11 via an OpenAI-compatible provider; see HANDOFF §10 |
 | M5 Critic + Reporting | ✅ Done | Orchestrator, CLI wired, 16 tests pass, ruff clean |
-| M6 Baselines + Eval | ✅ Built | Baseline A/No-Critic/Stats-only + `sentinel eval`; stats-only run on 28 x 3 seeds, LLM systems not yet benchmarked |
-| M7 UI + Scheduling | ✅ Built | Streamlit UI, `sentinel daily`, Slack webhook |
+| M6 Baselines + Eval | ✅ Built | Baseline A/No-Critic/Stats-only + `axiom eval`; stats-only run on 28 x 3 seeds, LLM systems not yet benchmarked |
+| M7 UI + Scheduling | ✅ Built | Streamlit UI, `axiom daily`, Slack webhook |
 | M8 Real Data + Write-up | ⚠️ Partial | Olist adapter + README results/limitations; LLM benchmark rows and a real-Olist run pending |
 
 ---
@@ -20,52 +20,52 @@
 
 ### M0 — Skeleton
 - Repo layout per PRD §13
-- Pydantic models in `sentinel/models/__init__.py`
+- Pydantic models in `axiom/models/__init__.py`
 - Typer CLI stubs
 - Config files: `settings.yaml`, `schema.yaml`, `metric_tree.yaml`
 - CI workflow (ruff + pytest)
 - DECISIONS.md (D1–D25)
 
 ### M1 — Simulator
-- `sentinel/simulator/generator.py` — 180 days of synthetic e-commerce data
-- `sentinel/simulator/injector.py` — anomaly injection
+- `axiom/simulator/generator.py` — 180 days of synthetic e-commerce data
+- `axiom/simulator/injector.py` — anomaly injection
 - **28 scenarios** across 4 YAML files:
   - `business.yaml` (12 scenarios): payment failures, traffic drops, app bugs, stock-outs
   - `data_issues.yaml` (8 scenarios): tracking bugs, schema changes, late data
   - `hard.yaml` (2 scenarios): Simpson's paradox, two-cause days
   - `no_anomaly.yaml` (4 scenarios): normal days + sub-threshold wobble
 - `ground_truth.json` with `true_revenue`, `counterfactual_revenue`, `effect_revenue_delta`
-- `sentinel simulate` CLI command
+- `axiom simulate` CLI command
 
 ### M2 — Ingestion + Data Quality
-- `sentinel/ingestion/__init__.py` — per-day parquet → DuckDB views
-- `sentinel/quality/__init__.py` — `check_day()` returning DQReport (PASS/WARN/BLOCK)
+- `axiom/ingestion/__init__.py` — per-day parquet → DuckDB views
+- `axiom/quality/__init__.py` — `check_day()` returning DQReport (PASS/WARN/BLOCK)
 - Checks: schema diff, row counts, null rates, duplicates, category drift, tracking invariants
 - Data-issue scenarios (S13–S20) return BLOCK/WARN correctly
 
 ### M3 — Detection + Analysis
-- `sentinel/detection/__init__.py` — robust z-score detection against weekday/trailing baselines
-- `sentinel/analysis/`:
+- `axiom/detection/__init__.py` — robust z-score detection against weekday/trailing baselines
+- `axiom/analysis/`:
   - `cube.py` — metric cube with all dimensions
   - `metric_tree.py` — LMDI decomposition
   - `drilldown.py` — Simpson-safe additive/ratio drill-down
   - `tools.py` — LLM-facing tools (get_metric, decompose_metric, drill_down, etc.)
-- `sentinel/evidence/__init__.py` — evidence store
+- `axiom/evidence/__init__.py` — evidence store
 - Baseline C (deterministic) hits top-3 on 10/14 single-cause scenarios (71%)
 
 ### M4 — Investigation Agent
-- `sentinel/llm/__init__.py` — Anthropic client with caching + token tally
-- `sentinel/agents/investigation.py` — LLM tool-use loop, 25-call budget
-- `sentinel/agents/prompts/investigation.md` — prompt
-- `sentinel/evidence/verifier.py` — numeric hallucination checker
+- `axiom/llm/__init__.py` — Anthropic client with caching + token tally
+- `axiom/agents/investigation.py` — LLM tool-use loop, 25-call budget
+- `axiom/agents/prompts/investigation.md` — prompt
+- `axiom/evidence/verifier.py` — numeric hallucination checker
 - **NOT tested against live API** — no `ANTHROPIC_API_KEY` in environment
 
 ### M5 — Critic + Reporting + Orchestrator
-- `sentinel/agents/critic.py` — 6 checks (traffic, mix-shift, data-artifact, calendar, magnitude, LLM verdict)
-- `sentinel/agents/prompts/critic.md` — Critic prompt
-- `sentinel/agents/reporting.py` — ReportWriter (Markdown + JSON with evidence citations)
-- `sentinel/orchestrator.py` — full pipeline: DQ → detect → investigate → critic → report
-- `sentinel/cli.py` — `sentinel run` wired to orchestrator with progress output
+- `axiom/agents/critic.py` — 6 checks (traffic, mix-shift, data-artifact, calendar, magnitude, LLM verdict)
+- `axiom/agents/prompts/critic.md` — Critic prompt
+- `axiom/agents/reporting.py` — ReportWriter (Markdown + JSON with evidence citations)
+- `axiom/orchestrator.py` — full pipeline: DQ → detect → investigate → critic → report
+- `axiom/cli.py` — `axiom run` wired to orchestrator with progress output
 - Evidence persisted to `runs/<run_id>/evidence.json`
 - **NOT tested against live API** — requires `ANTHROPIC_API_KEY`
 
@@ -75,9 +75,9 @@
 
 | Item | What is needed |
 |------|----------------|
-| LLM benchmark | Run `sentinel eval` for `sentinel,no_critic,baseline_a` (needs a provider with enough rate limit; free-tier Dahl was too constrained) and add the rows to the README results table |
+| LLM benchmark | Run `axiom eval` for `axiom,no_critic,baseline_a` (needs a provider with enough rate limit; free-tier Dahl was too constrained) and add the rows to the README results table |
 | Live Critic | Verify the Critic's real LLM verdict and the revise loop on a live model |
-| Real data | Download Olist, run `sentinel adapt-olist`, then `sentinel daily --data data/olist --day <date>`; DQ thresholds are tuned for the simulator |
+| Real data | Download Olist, run `axiom adapt-olist`, then `axiom daily --data data/olist --day <date>`; DQ thresholds are tuned for the simulator |
 | Cost | Set `pricing:` in `config/settings.yaml` to get $ per run (PRD target <= $0.50) |
 
 ## Key Invariants (must hold)
@@ -108,18 +108,18 @@
 
 ```bash
 # Current state
-sentinel simulate --out data/sim  # Generate data
+axiom simulate --out data/sim  # Generate data
 ruff check .                      # Lint
 pytest                            # Tests
 
 # M5 smoke test (after getting API key)
 $env:ANTHROPIC_API_KEY = "sk-..."
-sentinel run --date 2026-04-01    # Should produce report
+axiom run --date 2026-04-01    # Should produce report
 ```
 
 **Definition of Done** (PRD §17):
-- `sentinel run --date YYYY-MM-DD` produces a report
-- `sentinel eval` produces full metrics table
-- Sentinel beats Baseline A on accuracy + hallucination rate
+- `axiom run --date YYYY-MM-DD` produces a report
+- `axiom eval` produces full metrics table
+- Axiom beats Baseline A on accuracy + hallucination rate
 - Streamlit UI shows evidence behind any claim
 - README has architecture + results + limitations

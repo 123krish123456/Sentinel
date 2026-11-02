@@ -3,16 +3,16 @@ from pathlib import Path
 
 import pytest
 
-from sentinel.agents.investigation import investigate
-from sentinel.analysis.tools import Tools
-from sentinel.detection import detect
-from sentinel.evidence import EvidenceStore
-from sentinel.evidence.verifier import unsupported_numbers
-from sentinel.llm import LLMClient
+from axiom.agents.investigation import investigate
+from axiom.analysis.tools import Tools
+from axiom.detection import detect
+from axiom.evidence import EvidenceStore
+from axiom.evidence.verifier import unsupported_numbers
+from axiom.llm import LLMClient
 
 DATA = Path("data/sim")
 DAY = date(2026, 4, 1)  # S11: electronics stockout
-needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `sentinel simulate --out data/sim` first")
+needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `axiom simulate --out data/sim` first")
 
 
 class Script:

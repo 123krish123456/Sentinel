@@ -1,4 +1,4 @@
-from sentinel.llm.openai_compat import _to_anthropic, _to_openai_messages
+from axiom.llm.openai_compat import _to_anthropic, _to_openai_messages
 
 
 def test_messages_round_trip_tool_use():

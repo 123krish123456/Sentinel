@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from sentinel.eval import matches, score
-from sentinel.models import Report
-from sentinel.orchestrator import Orchestrator
+from axiom.eval import matches, score
+from axiom.models import Report
+from axiom.orchestrator import Orchestrator
 
 DATA = Path("data/sim")
-needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `sentinel simulate --out data/sim` first")
+needs_sim = pytest.mark.skipif(not DATA.exists(), reason="run `axiom simulate --out data/sim` first")
 
 
 class Fake:
@@ -77,7 +77,7 @@ def test_score_two_cause_and_no_anomaly():
 
 
 def test_slack_only_when_escalating(monkeypatch):
-    from sentinel import delivery
+    from axiom import delivery
     sent = []
     monkeypatch.setattr(delivery.httpx, "post", lambda url, **k: sent.append(url) or type("R", (), {"is_success": True})())
     quiet = Report(run_id="r", date=date(2026, 1, 1), status="normal", headline="ok")
@@ -88,7 +88,7 @@ def test_slack_only_when_escalating(monkeypatch):
 
 @needs_sim
 def test_baseline_a_runs_sandbox_and_is_verified():
-    from sentinel.baselines import run_system
+    from axiom.baselines import run_system
 
     class Agent:
         n = calls = input_tokens = output_tokens = 0

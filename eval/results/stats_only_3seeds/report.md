@@ -1,4 +1,4 @@
-# Sentinel eval report
+# Axiom eval report
 
 84 runs (28 scenarios, 3 seed(s), systems: stats_only).
 

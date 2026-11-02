@@ -1,4 +1,4 @@
-# PRD — Sentinel: Autonomous Root-Cause Analysis Agent
+# PRD — Axiom: Autonomous Root-Cause Analysis Agent
 
 > **For Claude Code:** Read this entire document before writing any code. Build in the milestone order in §12. Do not skip the synthetic data generator and ground-truth harness. They are what make this project measurable. When something here is ambiguous, pick the simplest option that keeps the invariants in §4 true, and note the decision in `DECISIONS.md`.
 
@@ -160,7 +160,7 @@ Output per hypothesis: `{verdict: accept | revise | reject, reasons[], extra_che
 ## 9. Data
 
 ### 9.1 Synthetic data generator (required, build first)
-`sentinel/simulator/` generates a realistic e-commerce event dataset:
+`axiom/simulator/` generates a realistic e-commerce event dataset:
 
 - ~180 days, ~50k–200k sessions/day (configurable).
 - Tables: `sessions`, `events` (view, add_to_cart, checkout_start, payment_attempt, payment_success, payment_failure with error_code), `orders` (order_id, amount, items, payment_method, …).
@@ -186,9 +186,9 @@ Adapters for one public dataset (e.g. Olist Brazilian e-commerce or the Google M
 ## 10. Benchmark and evaluation
 
 ### 10.1 Systems compared
-1. **Sentinel** (this system).
+1. **Axiom** (this system).
 2. **Baseline A:** single LLM agent with a Python/pandas execution tool, given the same data and the prompt "Analyze yesterday vs baseline and explain any significant change."
-3. **Baseline B (ablation):** Sentinel without the Critic.
+3. **Baseline B (ablation):** Axiom without the Critic.
 4. Optional: **Baseline C:** detection + drill-down only, no LLM (pure statistics).
 
 Use the same model for all LLM-based systems.
@@ -208,7 +208,7 @@ Use the same model for all LLM-based systems.
 | Cost | Tokens and $ per run |
 
 ### 10.3 Harness
-`sentinel eval --scenarios scenarios/ --systems sentinel,baseline_a,no_critic --runs 3` writes `eval/results/<timestamp>/results.csv` and a summary `report.md` with tables and charts. Each scenario is run 3 times with different seeds for variance.
+`axiom eval --scenarios scenarios/ --systems axiom,baseline_a,no_critic --runs 3` writes `eval/results/<timestamp>/results.csv` and a summary `report.md` with tables and charts. Each scenario is run 3 times with different seeds for variance.
 
 ---
 
@@ -236,7 +236,7 @@ Repo layout, config, Pydantic models, CLI stub, `DECISIONS.md`, CI running pytes
 
 **M1 — Simulator + ground truth (days 2–4)**
 Data generator, anomaly injector, 25+ scenarios, ground-truth file.
-*Acceptance:* `sentinel simulate --scenarios scenarios/` produces data plus `ground_truth.json`; injected anomalies are visible in a quick plot.
+*Acceptance:* `axiom simulate --scenarios scenarios/` produces data plus `ground_truth.json`; injected anomalies are visible in a quick plot.
 
 **M2 — Ingestion + Data Quality (days 5–6)**
 *Acceptance:* the schema-change and tracking-bug scenarios return `BLOCK`/`WARN` with the right issue; clean days return `PASS`.
@@ -253,7 +253,7 @@ LLM tool-use loop over the M3 tools, with evidence store and budgets.
 *Acceptance:* Simpson's-paradox and traffic-drop scenarios get corrected by the Critic in at least half the cases where Investigation got them wrong; reports pass the numeric-hallucination checker.
 
 **M6 — Baseline A + eval harness (days 17–19)**
-*Acceptance:* `sentinel eval` produces the full metrics table for all systems.
+*Acceptance:* `axiom eval` produces the full metrics table for all systems.
 
 **M7 — UI + scheduler + alerts (days 20–22)**
 Streamlit app: run list, report view, click any claim to see its query and result, eval dashboard. Daily scheduled run. Optional Slack webhook.
@@ -266,9 +266,9 @@ One public dataset adapter. README with architecture diagram, benchmark results 
 ## 13. Repo structure
 
 ```
-sentinel/
+axiom/
   config/            settings.yaml, schema.yaml, metric_tree.yaml
-  sentinel/
+  axiom/
     models/          pydantic schemas (RawBatch, DQReport, Anomaly, Hypothesis, CriticVerdict, Report)
     simulator/       generator.py, injector.py
     ingestion/
@@ -372,8 +372,8 @@ class Report(BaseModel):
 
 ## 17. Definition of done (v1)
 
-- `sentinel run --date YYYY-MM-DD` produces a report for any simulated day.
-- `sentinel eval` runs all scenarios against Sentinel, Baseline A and No-Critic, and writes the metrics table.
-- Sentinel beats Baseline A on root-cause accuracy@1 and numeric hallucination rate, and the No-Critic ablation shows a measurable drop on mix-shift/traffic scenarios. If it doesn't, the README reports that honestly.
+- `axiom run --date YYYY-MM-DD` produces a report for any simulated day.
+- `axiom eval` runs all scenarios against Axiom, Baseline A and No-Critic, and writes the metrics table.
+- Axiom beats Baseline A on root-cause accuracy@1 and numeric hallucination rate, and the No-Critic ablation shows a measurable drop on mix-shift/traffic scenarios. If it doesn't, the README reports that honestly.
 - Streamlit UI lets a user open any report claim and see the exact query and result behind it.
 - README explains architecture, method, benchmark results and limitations.

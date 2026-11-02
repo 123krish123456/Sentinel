@@ -1,5 +1,5 @@
 [project]
-name = "sentinel"
+name = "axiom"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = ["pydantic>=2", "typer>=0.12", "pyyaml", "duckdb", "pandas", "numpy", "scipy", "anthropic", "httpx", "pyarrow", "matplotlib", "tabulate"]
@@ -8,17 +8,17 @@ dependencies = ["pydantic>=2", "typer>=0.12", "pyyaml", "duckdb", "pandas", "num
 dev = ["pytest", "pytest-cov", "ruff"]
 
 [project.scripts]
-sentinel = "sentinel.cli:app"
+axiom = "axiom.cli:app"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["sentinel*"]
+include = ["axiom*"]
 
 [tool.setuptools.package-data]
-"sentinel.agents.prompts" = ["*.md"]
+"axiom.agents.prompts" = ["*.md"]
 
 [tool.ruff]
 line-length = 100

@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from sentinel.ingestion import available_days
-from sentinel.quality import check_day
+from axiom.ingestion import available_days
+from axiom.quality import check_day
 
 DATA = Path("data/sim")
-pytestmark = pytest.mark.skipif(not DATA.exists(), reason="run `sentinel simulate --out data/sim` first")
+pytestmark = pytest.mark.skipif(not DATA.exists(), reason="run `axiom simulate --out data/sim` first")
 
 
 def test_dq_matches_ground_truth():
